@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { mkdir } from 'node:fs/promises';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { FsSafeError, root } from 'openclaw/plugin-sdk/security-runtime';
 
 export type SaveResult = { ok: true; base: string; mmdPath: string; pngPath: string } | { ok: false; message: string };
@@ -73,5 +73,25 @@ export async function saveDiagram(dir: string, name: string, source: string, png
     return await attempt(5);
   } catch (error) {
     return { ok: false, message: reason(error) };
+  }
+}
+
+/** The `.mmd` names `saveDiagram` creates. Anything else is refused, so a caller can't name another file. */
+const SAVED_MMD = /^\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{6}-[a-z0-9-]{1,40}\.mmd$/;
+
+export type ReadResult = { ok: true; base: string; source: string } | { ok: false; message: string };
+
+/** Reads a `.mmd` this plugin saved in `dir`, given the name or the path `render_mermaid` returned. */
+export async function readSavedSource(dir: string, file: string): Promise<ReadResult> {
+  const name = basename(file.trim());
+  if (!SAVED_MMD.test(name)) {
+    return { ok: false, message: 'file must be the .mmd path render_mermaid returned' };
+  }
+  try {
+    const source = await (await root(dir)).readText(name);
+    return { ok: true, base: name.slice(0, -'.mmd'.length), source };
+  } catch (error) {
+    const code = typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined;
+    return { ok: false, message: code === 'ENOENT' || code === 'not-found' ? `${name} is not in the diagrams folder` : reason(error) };
   }
 }

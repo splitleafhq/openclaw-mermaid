@@ -17,3 +17,4 @@ What has been checked, and how. Anything not yet seen on a live gateway is marke
 | Mermaid `securityLevel: strict` still lets a label embed a local file (`<img src=/path>`, `<svg><image href>`, CSS `url()`) because mmdc renders from a `file:` page; the `dompurifyConfig` in `assets/mermaid.json` stops all three | mermaid-cli 12.0.0 | Checked: the render with a real file equals the render with a missing one (`test/mmdc.test.ts`); fails without the config |
 | The `test` CI job installs mermaid-cli 12.0.0 and runs `test/mmdc.test.ts` on Ubuntu | `.github/workflows/ci.yml` | Checked: CI on pull request #2 ran all four mmdc tests, 26 pass, 0 skipped |
 | `textPosition: "before"`: the text sent through `delivery.send`, then a reply with media and no text, ends the Matrix progress draft cleanly | not documented | Unverified live |
+| `send_mermaid_source` sends the `.txt` alone to the asking thread | not documented for plugins | Unverified live |
