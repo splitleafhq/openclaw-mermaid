@@ -1,0 +1,59 @@
+{
+  "name": "@splitleafhq/openclaw-mermaid",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OpenClaw plugin that renders Mermaid diagrams to PNG and sends them to the conversation.",
+  "keywords": [
+    "openclaw",
+    "openclaw-plugin",
+    "mermaid",
+    "diagrams"
+  ],
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24.16"
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "lint": "oxlint .",
+    "lint:fix": "oxlint . --fix",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "node --test --experimental-test-coverage --test-coverage-include='src/**' --test-coverage-lines=90 --test-coverage-branches=85 --test-coverage-functions=90 'test/*.test.ts'"
+  },
+  "peerDependencies": {
+    "openclaw": ">=2026.10.8"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "openclaw": "2026.10.8",
+    "oxlint": "1.88.0",
+    "typescript": "7.0.2"
+  },
+  "openclaw": {
+    "extensions": [
+      "./src/index.ts"
+    ],
+    "runtimeExtensions": [
+      "./dist/index.js"
+    ],
+    "compat": {
+      "pluginApi": ">=2026.10.8",
+      "minGatewayVersion": "2026.10.8"
+    },
+    "build": {
+      "openclawVersion": "2026.10.8",
+      "pluginSdkVersion": "2026.10.8"
+    }
+  },
+  "dependencies": {
+    "typebox": "1.3.34"
+  },
+  "files": [
+    "assets/",
+    "dist/",
+    "skills/",
+    "src/",
+    "openclaw.plugin.json"
+  ]
+}

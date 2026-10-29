@@ -1,0 +1,51 @@
+{
+  "id": "mermaid",
+  "name": "Mermaid",
+  "description": "Renders Mermaid diagrams to PNG and sends them to the conversation.",
+  "skills": [
+    "./skills"
+  ],
+  "contracts": {
+    "tools": [
+      "render_mermaid"
+    ]
+  },
+  "toolMetadata": {
+    "render_mermaid": {
+      "optional": true
+    }
+  },
+  "activation": {
+    "onStartup": true
+  },
+  "uiHints": {
+    "saveDir": { "label": "Diagrams folder", "help": "Where each .mmd and .png is kept. Absolute, or relative to the agent workspace." },
+    "timeoutMs": { "label": "Render timeout (ms)", "advanced": true },
+    "maxSourceChars": { "label": "Longest source (characters)", "advanced": true }
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "saveDir": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Where each .mmd and .png is kept. Absolute, or relative to the agent workspace. Created if missing. Unset: out/diagrams in the agent workspace."
+      },
+      "timeoutMs": {
+        "type": "integer",
+        "minimum": 1000,
+        "maximum": 300000,
+        "description": "Longest a render may run before it is stopped, in milliseconds.",
+        "default": 20000
+      },
+      "maxSourceChars": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 50000,
+        "description": "Longest Mermaid source render_mermaid accepts, in characters.",
+        "default": 20000
+      }
+    }
+  }
+}

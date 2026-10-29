@@ -1,0 +1,9 @@
+# Changelog
+
+## Unreleased
+
+First version, built and tested against OpenClaw 2026.10.8 and mermaid-cli 12.0.0.
+
+- **`render_mermaid`:** renders Mermaid to PNG with `mmdc`, keeps the `.mmd` and `.png` in `saveDir`, and sends the PNG with the agent's caption as the reply (`canDeliverSourceReply`). The source goes along only when asked, inline or as `.txt`.
+- **Network:** Chrome resolves no host names during a render; a timeout stops mmdc and Chrome.
+- **Skill `mermaid`:** when to draw, which diagram type, and syntax that avoids parse errors. Shown only when `mmdc` is on PATH.
