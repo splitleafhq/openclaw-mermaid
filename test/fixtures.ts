@@ -121,7 +121,7 @@ export function install({ pluginConfig = {} }: Options = {}) {
 export const text = (r: ToolResult) => r.content.map((c) => c.text ?? '').join('');
 
 export interface SourceReply {
-  text: string;
+  text?: string;
   mediaUrls?: string[];
 }
 
@@ -131,10 +131,11 @@ export function sourceReply(r: ToolResult): SourceReply | undefined {
     return undefined;
   }
   const s = d.sourceReply;
-  assert.ok(typeof s === 'object' && s !== null && 'text' in s && typeof s.text === 'string');
+  assert.ok(typeof s === 'object' && s !== null);
+  const replyText = 'text' in s && typeof s.text === 'string' ? s.text : undefined;
   if (!('mediaUrls' in s)) {
-    return { text: s.text };
+    return { text: defined(replyText) };
   }
   assert.ok(Array.isArray(s.mediaUrls));
-  return { text: s.text, mediaUrls: s.mediaUrls.map(String) };
+  return { ...(replyText === undefined ? {} : { text: replyText }), mediaUrls: s.mediaUrls.map(String) };
 }

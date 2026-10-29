@@ -1,9 +1,14 @@
 export const PLUGIN_ID = 'mermaid';
 
+export type SourceMode = 'onRequest' | 'always';
+export type TextPosition = 'after' | 'before';
+
 export interface MermaidConfig {
   saveDir?: string;
   timeoutMs: number;
   maxSourceChars: number;
+  source: SourceMode;
+  textPosition: TextPosition;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -25,5 +30,7 @@ export function resolveConfig(raw: unknown): MermaidConfig {
     saveDir: text(c.saveDir),
     timeoutMs: count(c.timeoutMs, 20000),
     maxSourceChars: count(c.maxSourceChars, 20000),
+    source: c.source === 'always' ? 'always' : 'onRequest',
+    textPosition: c.textPosition === 'before' ? 'before' : 'after',
   };
 }

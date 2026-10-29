@@ -65,6 +65,8 @@ OpenClaw loads the committed `dist/` through `openclaw.runtimeExtensions`; an in
 | `saveDir` | `out/diagrams` in the agent workspace | Where each `.mmd` and `.png` is kept. Absolute, or relative to the agent workspace |
 | `timeoutMs` | `20000` | Longest a render may run |
 | `maxSourceChars` | `20000` | Longest source accepted |
+| `source` | `onRequest` | `onRequest`: the source goes as a `.txt` only when the agent is asked. `always`: a `.txt` with every diagram |
+| `textPosition` | `after` | `after`: the image (and `.txt`), then the agent's text. `before`: the text, then the image (and `.txt`) as the reply |
 
 The attached copy is staged in OpenClaw's media store (`<state dir>/media/outbound`, pruned after a day), which every channel may send from; `saveDir` can be anywhere.
 

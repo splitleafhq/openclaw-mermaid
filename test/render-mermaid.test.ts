@@ -47,7 +47,7 @@ test('the source goes only as a .txt file, after the image, and only when asked;
   const t = await tool(undefined, {}, delivery);
   const plain = await t.execute('c1', { source: FLOW, caption: 'Regis' });
   assert.equal(delivery.sent.length, 1);
-  assert.doesNotMatch(defined(sourceReply(plain)).text, /```|flowchart/);
+  assert.doesNotMatch(defined(defined(sourceReply(plain)).text), /```|flowchart/);
 
   const asked = await t.execute('c2', { source: FLOW, caption: 'Regis', attachSource: true });
   assert.equal(delivery.sent.length, 3);
@@ -56,6 +56,25 @@ test('the source goes only as a .txt file, after the image, and only when asked;
   assert.match(txt, /\.txt$/);
   assert.equal(await readFile(txt, 'utf8'), FLOW);
   assert.deepEqual(sourceReply(asked), { text: 'Regis' });
+});
+
+test('source "always" sends the .txt after the image without being asked', async () => {
+  const delivery = recordingDelivery();
+  await (await tool(undefined, { source: 'always' }, delivery)).execute('c1', { source: FLOW, caption: 'Cattie-brie' });
+  assert.equal(delivery.sent.length, 2);
+  assert.ok(isPng(await readFile(defined(delivery.sent[0]?.mediaUrl))));
+  assert.equal(await readFile(defined(delivery.sent[1]?.mediaUrl), 'utf8'), FLOW);
+});
+
+test('textPosition "before" sends the text first, then the image and .txt as the reply', async () => {
+  const delivery = recordingDelivery();
+  const t = await tool(undefined, { textPosition: 'before' }, delivery);
+  const r = await t.execute('c1', { source: FLOW, caption: 'Wulfgar', attachSource: true });
+  assert.deepEqual(delivery.sent, [{ text: 'Wulfgar' }]);
+  const reply = defined(sourceReply(r));
+  assert.equal(defined(reply.mediaUrls).length, 2);
+  assert.ok(isPng(await readFile(defined(reply.mediaUrls?.[0]))));
+  assert.match(defined(reply.mediaUrls?.[1]), /\.txt$/);
 });
 
 test('with no caption the image is still sent and no empty reply is handed back', async () => {

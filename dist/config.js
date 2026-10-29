@@ -15,5 +15,7 @@ export function resolveConfig(raw) {
         saveDir: text(c.saveDir),
         timeoutMs: count(c.timeoutMs, 20000),
         maxSourceChars: count(c.maxSourceChars, 20000),
+        source: c.source === 'always' ? 'always' : 'onRequest',
+        textPosition: c.textPosition === 'before' ? 'before' : 'after',
     };
 }

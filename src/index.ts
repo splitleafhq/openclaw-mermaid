@@ -98,7 +98,7 @@ export function registerMermaid(api: PluginHost): void {
           const caption = (params.caption ?? '').trim();
           try {
             const media = [(await saveMediaBuffer(rendered.png, 'image/png', 'outbound', MAX_PNG_BYTES, `${saved.base}.png`)).path];
-            if (params.attachSource === true) {
+            if (params.attachSource === true || config.source === 'always') {
               media.push((await saveMediaBuffer(Buffer.from(source), 'text/plain', 'outbound', MAX_PNG_BYTES, `${saved.base}.txt`)).path);
             }
             const mmd = shown(saved.mmdPath, workspaceDir);
@@ -109,11 +109,18 @@ export function registerMermaid(api: PluginHost): void {
             if (delivery === undefined) {
               return textResult(`Sent the diagram. Saved ${mmd} and ${png}.`, { ...details, sourceReply: { text: caption, mediaUrls: media } });
             }
+            const done = `Sent the diagram. Saved ${mmd} and ${png}.`;
+            if (config.textPosition === 'before') {
+              if (caption !== '') {
+                await delivery.send({ text: caption });
+              }
+              return textResult(done, { ...details, sourceReply: { mediaUrls: media } });
+            }
             for (const mediaUrl of media) {
               // oxlint-disable-next-line no-await-in-loop -- sends must land in order: the image, then the .txt
               await delivery.send({ mediaUrl });
             }
-            return textResult(`Sent the diagram. Saved ${mmd} and ${png}.`, caption === '' ? details : { ...details, sourceReply: { text: caption } });
+            return textResult(done, caption === '' ? details : { ...details, sourceReply: { text: caption } });
           } catch (error) {
             warn(`sending failed: ${error instanceof Error ? error.message : String(error)}`);
             return fail('the image could not be sent');
