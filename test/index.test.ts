@@ -13,7 +13,7 @@ test('the manifest id, tool contract and defaults match the code', async () => {
   const manifest: unknown = JSON.parse(await readFile(new URL('../openclaw.plugin.json', import.meta.url), 'utf8'));
   assert.ok(typeof manifest === 'object' && manifest !== null && 'id' in manifest && 'contracts' in manifest && 'configSchema' in manifest);
   assert.equal(manifest.id, PLUGIN_ID);
-  assert.deepEqual(manifest.contracts, { tools: ['render_mermaid'] });
+  assert.deepEqual(manifest.contracts, { tools: ['render_mermaid', 'send_mermaid_source'] });
   const schema = manifest.configSchema;
   assert.ok(typeof schema === 'object' && schema !== null && 'properties' in schema && typeof schema.properties === 'object' && schema.properties !== null);
   assert.ok('maxSourceChars' in schema.properties && typeof schema.properties.maxSourceChars === 'object' && schema.properties.maxSourceChars !== null);

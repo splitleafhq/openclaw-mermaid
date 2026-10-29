@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0
+
+- **`send_mermaid_source`:** sends the source of a diagram already sent, as a `.txt` alone. The image isn't sent again. It takes the `.mmd` path `render_mermaid` returned and accepts only a name the plugin created in `saveDir`.
+- `attachSource` on `render_mermaid` is for a request that asks for the diagram and its source together.
+
 ## 0.2.0
 
 - **Image first, then the caption:** the PNG goes out on its own through `toolContext.delivery.send`, and the caption follows as the reply. On Matrix in progress mode the reply text used to arrive first, as the edited draft, with the image after it.

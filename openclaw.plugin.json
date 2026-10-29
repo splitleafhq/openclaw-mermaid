@@ -7,11 +7,15 @@
   ],
   "contracts": {
     "tools": [
-      "render_mermaid"
+      "render_mermaid",
+      "send_mermaid_source"
     ]
   },
   "toolMetadata": {
     "render_mermaid": {
+      "optional": true
+    },
+    "send_mermaid_source": {
       "optional": true
     }
   },

@@ -11,7 +11,9 @@ An [OpenClaw](https://docs.openclaw.ai) plugin (id `mermaid`) that lets an agent
 1. Renders `source` to PNG with `mmdc`, in the gateway process, so sandboxed and unsandboxed agents behave the same.
 2. Keeps `<stamp>-<hex>-<name>.mmd` and `.png` in `saveDir`, and returns their paths. A path inside the agent workspace is returned relative to it.
 3. Sends the PNG on its own through the host's delivery helper (`toolContext.delivery.send`, `docs/plugins/tool-plugins.md`, "Optional and factory tools"), then `caption` as the agent's reply through `details.sourceReply` ("Deliver the reply directly"). The reply ends the turn.
-4. Sends the source only when asked: `attachSource: true` sends it as a `.txt` file right after the image. Never inline.
+4. Sends the source only when asked in the same message: `attachSource: true` sends it as a `.txt` file right after the image. Never inline.
+
+`send_mermaid_source({ file, caption? })` sends the source of a diagram already sent, as a `.txt` on its own, without the image. `file` is the `.mmd` path `render_mermaid` returned; only a name the plugin created in `saveDir` is accepted, read through OpenClaw's `root().readText`.
 
 Without the delivery helper (a channel whose delivery a Gateway transport owns), the PNG and `.txt` go in the reply with the caption, and the channel decides their order.
 
@@ -36,7 +38,7 @@ openclaw plugins inspect mermaid --runtime --json
 
 OpenClaw loads the committed `dist/` through `openclaw.runtimeExtensions`; an install runs npm without scripts, so nothing is built then.
 
-`render_mermaid` is optional, so allow it per agent. A sandboxed agent also needs it in the sandbox list:
+Both tools are optional, so allow them per agent. A sandboxed agent also needs it in the sandbox list:
 
 ```json5
 {
@@ -49,8 +51,8 @@ OpenClaw loads the committed `dist/` through `openclaw.runtimeExtensions`; an in
     entries: {
       main: {
         tools: {
-          alsoAllow: ["...existing entries", "render_mermaid"],
-          sandbox: { tools: { alsoAllow: ["...existing entries", "render_mermaid"] } },
+          alsoAllow: ["...existing entries", "render_mermaid", "send_mermaid_source"],
+          sandbox: { tools: { alsoAllow: ["...existing entries", "render_mermaid", "send_mermaid_source"] } },
         },
       },
     },

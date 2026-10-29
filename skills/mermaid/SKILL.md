@@ -1,6 +1,6 @@
 ---
 name: mermaid
-description: Draw diagrams and charts (flowcharts, sequence, state, class, ER, Gantt, pie, timelines) as images with render_mermaid.
+description: Draw diagrams and charts (flowcharts, sequence, state, class, ER, Gantt, pie, timelines) as images with render_mermaid, and send their source with send_mermaid_source.
 metadata:
   {
     "openclaw":
@@ -19,7 +19,9 @@ When a diagram or chart would help, write it in Mermaid and call `render_mermaid
 - `source`: the Mermaid text, without a ```mermaid fence.
 - `caption`: what you'd say with the picture. The call ends your turn, so put everything you want to say here.
 - `name`: a few words for the file names.
-- `attachSource`: `true` only when the user asks for the source. It arrives as a `.txt` file after the image. Never paste the source into your message.
+- `attachSource`: `true` only when the same message asks for the diagram and its source. The source arrives as a `.txt` file after the image.
+
+When the user asks for the source of a diagram you already sent, call `send_mermaid_source` with the `.mmd` path `render_mermaid` returned, and a `caption`. It sends the `.txt` alone; the image isn't sent again. Never paste the source into your message.
 
 Every render keeps the `.mmd` and `.png`; the result gives their paths, so you can edit the `.mmd` and render it again later.
 

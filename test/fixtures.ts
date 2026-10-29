@@ -111,9 +111,9 @@ export function install({ pluginConfig = {} }: Options = {}) {
   registerMermaid(api);
   return {
     warnings,
-    toolFor(workspaceDir: string | undefined, delivery?: Delivery): ToolLike | undefined {
-      const tool = factories[0]?.({ workspaceDir, delivery });
-      return isTool(tool) ? tool : undefined;
+    toolFor(workspaceDir: string | undefined, delivery?: Delivery, name = 'render_mermaid'): ToolLike | undefined {
+      const tools = factories.map((factory) => factory({ workspaceDir, delivery }));
+      return tools.find((tool): tool is ToolLike => isTool(tool) && tool.name === name);
     },
   };
 }
