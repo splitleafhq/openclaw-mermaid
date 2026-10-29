@@ -21,7 +21,9 @@
   "uiHints": {
     "saveDir": { "label": "Diagrams folder", "help": "Where each .mmd and .png is kept. Absolute, or relative to the agent workspace." },
     "timeoutMs": { "label": "Render timeout (ms)", "advanced": true },
-    "maxSourceChars": { "label": "Longest source (characters)", "advanced": true }
+    "maxSourceChars": { "label": "Longest source (characters)", "advanced": true },
+    "source": { "label": "Send the source", "help": "onRequest: a .txt only when asked. always: a .txt with every diagram." },
+    "textPosition": { "label": "Text position", "help": "after: the image, then the text. before: the text, then the image." }
   },
   "configSchema": {
     "type": "object",
@@ -45,6 +47,18 @@
         "maximum": 50000,
         "description": "Longest Mermaid source render_mermaid accepts, in characters.",
         "default": 20000
+      },
+      "source": {
+        "type": "string",
+        "enum": ["onRequest", "always"],
+        "description": "When the Mermaid source goes out as a .txt file after the image: only when the agent is asked for it, or with every diagram.",
+        "default": "onRequest"
+      },
+      "textPosition": {
+        "type": "string",
+        "enum": ["after", "before"],
+        "description": "Whether the agent's text comes after the image or before it.",
+        "default": "after"
       }
     }
   }

@@ -1,6 +1,13 @@
 # Changelog
 
-## Unreleased
+## 0.2.0
+
+- **Image first, then the caption:** the PNG goes out on its own through `toolContext.delivery.send`, and the caption follows as the reply. On Matrix in progress mode the reply text used to arrive first, as the edited draft, with the image after it.
+- **Source as a file only:** `includeSource` (`none` | `inline` | `file`) is replaced by `attachSource` (boolean). The source is never sent inline.
+- `caption` is required.
+- **Config:** `source` (`onRequest` | `always`) and `textPosition` (`after` | `before`).
+
+## 0.1.0
 
 First version, built and tested against OpenClaw 2026.10.8 and mermaid-cli 12.0.0.
 
