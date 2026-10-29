@@ -6,12 +6,16 @@ An [OpenClaw](https://docs.openclaw.ai) plugin (id `mermaid`) that lets an agent
 
 ## What it does
 
-`render_mermaid({ source, name?, caption?, includeSource? })`:
+`render_mermaid({ source, caption, name?, attachSource? })`:
 
 1. Renders `source` to PNG with `mmdc`, in the gateway process, so sandboxed and unsandboxed agents behave the same.
 2. Keeps `<stamp>-<hex>-<name>.mmd` and `.png` in `saveDir`, and returns their paths. A path inside the agent workspace is returned relative to it.
-3. Sends the PNG, with `caption` as the text, as the agent's reply through `details.sourceReply` (`docs/plugins/tool-plugins.md`, "Deliver the reply directly"). The reply ends the turn.
-4. Sends the source only when asked: `includeSource: "inline"` adds a `mermaid` code block, `"file"` attaches it as `.txt`.
+3. Sends the PNG on its own through the host's delivery helper (`toolContext.delivery.send`, `docs/plugins/tool-plugins.md`, "Optional and factory tools"), then `caption` as the agent's reply through `details.sourceReply` ("Deliver the reply directly"). The reply ends the turn.
+4. Sends the source only when asked: `attachSource: true` sends it as a `.txt` file right after the image. Never inline.
+
+Without the delivery helper (a channel whose delivery a Gateway transport owns), the PNG and `.txt` go in the reply with the caption, and the channel decides their order.
+
+On Matrix with `streaming.mode` `progress`, OpenClaw 2026.10.8 edits the progress draft into the reply text and sends any media in the reply as a separate event without a caption (`extensions/matrix/src/matrix/monitor/handler-reply-dispatcher.ts`, `buildSupplementalPayload`). Sending the image first through the helper keeps it above the text. One message holding the image, the `.txt` and the caption needs an outbound gallery, which the Matrix plugin doesn't send yet.
 
 A parse error comes back as an error result with mermaid-cli's message and line, so the agent can fix the source and call again. Nothing is sent or saved.
 

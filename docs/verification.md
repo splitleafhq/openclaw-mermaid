@@ -5,8 +5,10 @@ What has been checked, and how. Anything not yet seen on a live gateway is marke
 | Claim | Source | Status |
 |---|---|---|
 | A factory tool with `canDeliverSourceReply: true` and `details.sourceReply { text, mediaUrls }` sends one reply to the source conversation and ends the turn | openclaw 2026.10.8 `docs/plugins/tool-plugins.md` ("Deliver the reply directly"); `dist/builtin-openclaw-*.mjs` reads the flag from the effective tool list | Docs and source; unverified live |
-| The PNG shows inline in a Matrix client, in the asking thread | not documented for plugins | Unverified: the first live test |
-| A `.txt` from `includeSource: "file"` arrives as a file | not documented for plugins | Unverified: the first live test |
+| The PNG shows inline in a Matrix client, in the asking thread | not documented for plugins | Checked on 0.1.0 (Element X, OpenClaw 2026.10.8): inline in the asking thread, but after the reply text, which arrived as the edited progress draft |
+| On Matrix progress mode, a reply with text and media becomes the edited draft text, then the media as a captionless event | `@openclaw/matrix` 2026.10.8 `handler-reply-dispatcher.ts` (`buildFinalEdit`, `buildSupplementalPayload`) | Source, and seen live on 0.1.0 |
+| `delivery.send({ mediaUrl })` sends the PNG to the asking thread before the reply text | openclaw 2026.10.8 `docs/plugins/tool-plugins.md` ("Optional and factory tools") | Docs; unverified live on 0.2.0 |
+| A `.txt` from `attachSource: true` arrives as a file after the image | not documented for plugins | Unverified live |
 | Files saved with `saveMediaBuffer(..., "outbound")` are under an allowed local media root for every agent, sandboxed or not | openclaw 2026.10.8 `dist/store-*.mjs` (writes under `<state dir>/media/outbound`), `dist/local-roots-*.mjs` (`<state dir>/media` is a default root; the sandbox filter removes only `sandboxes` and `workspace` overlaps); `dist/store-*.mjs` (`outbound` pruned after 24 h) | Source; unverified live |
 | A plugin skill loads when the plugin is enabled, gated by `metadata.openclaw.requires.bins`, checked on the host | openclaw 2026.10.8 `docs/tools/skills.md` ("Plugins and skills", `requires.bins`) | Docs. Checked on an isolated state dir: `openclaw skills info mermaid` shows it ready with `mmdc` found. Hiding it without `mmdc` is unverified: OpenClaw still found `mmdc` with a stripped PATH |
 | `mmdc` reads stdin and writes PNG to stdout with `-i - -o - -e png` | mermaid-cli 12.0.0 | Checked |

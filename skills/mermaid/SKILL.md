@@ -14,12 +14,12 @@ metadata:
 
 # Mermaid diagrams
 
-When a diagram or chart would help, write it in Mermaid and call `render_mermaid`. It renders a PNG and sends it to the conversation as your reply. Don't paste a Mermaid code block, write HTML or SVG, or describe an image you haven't sent.
+When a diagram or chart would help, write it in Mermaid and call `render_mermaid`. It sends the PNG to the conversation, then your caption as your reply. Don't paste a Mermaid code block, write HTML or SVG, or describe an image you haven't sent.
 
 - `source`: the Mermaid text, without a ```mermaid fence.
-- `caption`: what you'd say with the picture. The image ends your turn, so put everything you want to say here.
+- `caption`: what you'd say with the picture. The call ends your turn, so put everything you want to say here.
 - `name`: a few words for the file names.
-- `includeSource`: only when the user asks for the source: `inline` adds a code block, `file` attaches it as a `.txt`.
+- `attachSource`: `true` only when the user asks for the source. It arrives as a `.txt` file after the image. Never paste the source into your message.
 
 Every render keeps the `.mmd` and `.png`; the result gives their paths, so you can edit the `.mmd` and render it again later.
 

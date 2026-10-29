@@ -20,14 +20,12 @@ const TOOL = 'render_mermaid';
 
 const PARAMETERS = Type.Object({
   source: Type.String({ description: 'Mermaid source, without a ```mermaid fence.' }),
+  caption: Type.String({
+    description: 'Your message about the diagram, in your own words. It is sent right after the image and ends your turn: write nothing after this call.',
+  }),
   name: Type.Optional(Type.String({ description: 'A few words that name the files, such as "login flow".' })),
-  caption: Type.Optional(
-    Type.String({ description: 'The message sent with the image, in your own words. The image ends your turn: write nothing after this call.' }),
-  ),
-  includeSource: Type.Optional(
-    Type.Union([Type.Literal('none'), Type.Literal('inline'), Type.Literal('file')], {
-      description: 'Also send the Mermaid source: "inline" as a code block, "file" as a .txt attachment. Only when the user asks for it. Default "none".',
-    }),
+  attachSource: Type.Optional(
+    Type.Boolean({ description: 'Also send the Mermaid source as a .txt file. Only when the user asks for the source.' }),
   ),
 });
 
@@ -76,7 +74,7 @@ export function registerMermaid(api: PluginHost): void {
         name: TOOL,
         label: 'Render Mermaid',
         description:
-          'Draw a diagram or chart: renders Mermaid source to a PNG and sends it to this conversation as your reply. Saves the .mmd and .png and returns their paths. On a syntax error, fix the source and call again.',
+          'Draw a diagram or chart: renders Mermaid source to a PNG, sends it to this conversation, then sends your caption as your reply. Saves the .mmd and .png and returns their paths. On a syntax error, fix the source and call again.',
         parameters: PARAMETERS,
         canDeliverSourceReply: true,
         catalogMode: 'direct-only',
@@ -97,27 +95,28 @@ export function registerMermaid(api: PluginHost): void {
             warn(`save failed: ${saved.message}`);
             return fail(saved.message);
           }
-          const includeSource = params.includeSource ?? 'none';
+          const caption = (params.caption ?? '').trim();
           try {
             const media = [(await saveMediaBuffer(rendered.png, 'image/png', 'outbound', MAX_PNG_BYTES, `${saved.base}.png`)).path];
-            if (includeSource === 'file') {
+            if (params.attachSource === true) {
               media.push((await saveMediaBuffer(Buffer.from(source), 'text/plain', 'outbound', MAX_PNG_BYTES, `${saved.base}.txt`)).path);
-            }
-            const parts = [params.caption?.trim() ?? ''];
-            if (includeSource === 'inline') {
-              parts.push(`\`\`\`mermaid\n${source}\n\`\`\``);
             }
             const mmd = shown(saved.mmdPath, workspaceDir);
             const png = shown(saved.pngPath, workspaceDir);
-            return textResult(`Sent the diagram. Saved ${mmd} and ${png}.`, {
-              status: 'sent',
-              mmd,
-              png,
-              sourceReply: { text: parts.filter((p) => p !== '').join('\n\n'), mediaUrls: media },
-            });
+            const details = { status: 'sent', mmd, png };
+            const { delivery } = ctx;
+            // Without a delivery helper the image goes with the reply text, in whatever order the channel sends them.
+            if (delivery === undefined) {
+              return textResult(`Sent the diagram. Saved ${mmd} and ${png}.`, { ...details, sourceReply: { text: caption, mediaUrls: media } });
+            }
+            for (const mediaUrl of media) {
+              // oxlint-disable-next-line no-await-in-loop -- sends must land in order: the image, then the .txt
+              await delivery.send({ mediaUrl });
+            }
+            return textResult(`Sent the diagram. Saved ${mmd} and ${png}.`, caption === '' ? details : { ...details, sourceReply: { text: caption } });
           } catch (error) {
-            warn(`staging failed: ${error instanceof Error ? error.message : String(error)}`);
-            return fail('the image could not be staged for sending');
+            warn(`sending failed: ${error instanceof Error ? error.message : String(error)}`);
+            return fail('the image could not be sent');
           }
         },
       };

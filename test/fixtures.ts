@@ -77,12 +77,27 @@ export async function fakeEnvironment(): Promise<{ bin: string; state: string }>
   return { bin, state };
 }
 
+export interface Delivery {
+  send(params: { text?: string; mediaUrl?: string }): Promise<void>;
+}
+
+/** A stand-in for the host's delivery helper that records each send, in order. */
+export function recordingDelivery(): Delivery & { sent: { text?: string; mediaUrl?: string }[] } {
+  const sent: { text?: string; mediaUrl?: string }[] = [];
+  return {
+    sent,
+    send: async (params) => {
+      sent.push(params);
+    },
+  };
+}
+
 export interface Options {
   pluginConfig?: Record<string, unknown>;
 }
 
 export function install({ pluginConfig = {} }: Options = {}) {
-  const factories: ((ctx: { workspaceDir?: string }) => unknown)[] = [];
+  const factories: ((ctx: { workspaceDir?: string; delivery?: Delivery }) => unknown)[] = [];
   const warnings: string[] = [];
   const api: PluginHost = {
     pluginConfig,
@@ -96,8 +111,8 @@ export function install({ pluginConfig = {} }: Options = {}) {
   registerMermaid(api);
   return {
     warnings,
-    toolFor(workspaceDir: string | undefined): ToolLike | undefined {
-      const tool = factories[0]?.({ workspaceDir });
+    toolFor(workspaceDir: string | undefined, delivery?: Delivery): ToolLike | undefined {
+      const tool = factories[0]?.({ workspaceDir, delivery });
       return isTool(tool) ? tool : undefined;
     },
   };
@@ -107,7 +122,7 @@ export const text = (r: ToolResult) => r.content.map((c) => c.text ?? '').join('
 
 export interface SourceReply {
   text: string;
-  mediaUrls: string[];
+  mediaUrls?: string[];
 }
 
 export function sourceReply(r: ToolResult): SourceReply | undefined {
@@ -116,6 +131,10 @@ export function sourceReply(r: ToolResult): SourceReply | undefined {
     return undefined;
   }
   const s = d.sourceReply;
-  assert.ok(typeof s === 'object' && s !== null && 'text' in s && 'mediaUrls' in s && typeof s.text === 'string' && Array.isArray(s.mediaUrls));
+  assert.ok(typeof s === 'object' && s !== null && 'text' in s && typeof s.text === 'string');
+  if (!('mediaUrls' in s)) {
+    return { text: s.text };
+  }
+  assert.ok(Array.isArray(s.mediaUrls));
   return { text: s.text, mediaUrls: s.mediaUrls.map(String) };
 }
