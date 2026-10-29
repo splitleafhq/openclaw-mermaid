@@ -1,4 +1,8 @@
 {
   "securityLevel": "strict",
-  "maxTextSize": 50000
+  "maxTextSize": 50000,
+  "dompurifyConfig": {
+    "FORBID_TAGS": ["img", "image", "svg", "use", "foreignObject", "object", "embed", "video", "audio", "source", "picture"],
+    "FORBID_ATTR": ["src", "href", "xlink:href", "style", "srcset", "poster"]
+  }
 }

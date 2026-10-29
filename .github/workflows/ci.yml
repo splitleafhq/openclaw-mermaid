@@ -59,6 +59,10 @@ jobs:
           cache: npm
       # The gateway supplies the SDK at run time; the typecheck and tests import the pinned devDependency.
       - run: npm ci --ignore-scripts --no-audit --no-fund
+      # test/mmdc.test.ts renders with the real mermaid-cli; it is skipped where mmdc is missing.
+      - run: npm install -g @mermaid-js/mermaid-cli@12.0.0 --no-audit --no-fund
+      # Ubuntu 24.04 blocks the unprivileged user namespaces Chrome's sandbox needs (Puppeteer troubleshooting guide).
+      - run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - run: npm test
 
   build:

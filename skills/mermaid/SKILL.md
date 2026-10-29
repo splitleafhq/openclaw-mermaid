@@ -43,6 +43,6 @@ Every render keeps the `.mmd` and `.png`; the result gives their paths, so you c
 - Avoid reserved words as ids: `end`, `graph`, `subgraph`, `style`, `class`, `click`. Use `done` or `end_step` instead of `end`.
 - Edge labels: `a -->|"yes"| b`.
 - Subgraphs: `subgraph billing["Billing"]` ... `end`.
-- No links, images or `click` lines: the renderer has no network.
+- No links, images, HTML styles or `click` lines: the renderer has no network and strips them.
 
 On a syntax error, `render_mermaid` returns the parser's message with the line. Fix that line and call again.

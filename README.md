@@ -17,7 +17,7 @@ A parse error comes back as an error result with mermaid-cli's message and line,
 
 ### Network
 
-mermaid-cli renders in headless Chrome, which fetches image URLs in a diagram even with Mermaid's `securityLevel: strict`. `assets/puppeteer.json` starts Chrome with `--host-resolver-rules=MAP * ~NOTFOUND` and `--disable-background-networking`, so a diagram reaches nothing; `test/mmdc.test.ts` checks this against a local server. Each render has a timeout, and stopping it stops Chrome too.
+mermaid-cli renders in headless Chrome from a `file:` page. Even with Mermaid's `securityLevel: strict`, a label can fetch an image URL or embed a local file. `assets/puppeteer.json` starts Chrome with `--host-resolver-rules=MAP * ~NOTFOUND` and `--disable-background-networking`, and `assets/mermaid.json` sets DOMPurify to drop the tags and attributes that load files (`img`, `image`, `src`, `href`, `style` and similar). `test/mmdc.test.ts` checks both: a local server gets no request, and a real file path renders the same as a missing one. Each render has a timeout, and stopping it stops Chrome too.
 
 ## Install
 
@@ -62,7 +62,7 @@ OpenClaw loads the committed `dist/` through `openclaw.runtimeExtensions`; an in
 | `timeoutMs` | `20000` | Longest a render may run |
 | `maxSourceChars` | `20000` | Longest source accepted |
 
-The attached copy is staged in OpenClaw's media store (`media/outbound`, pruned after a day), which every channel may send from; `saveDir` can be anywhere.
+The attached copy is staged in OpenClaw's media store (`<state dir>/media/outbound`, pruned after a day), which every channel may send from; `saveDir` can be anywhere.
 
 ## Development
 

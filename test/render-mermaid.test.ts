@@ -95,6 +95,9 @@ test('a cancelled call stops the render', async () => {
   setTimeout(() => controller.abort(), 200);
   const r = await t.execute('c1', { source: 'HANG' }, controller.signal);
   assert.match(text(r), /cancelled/);
+  const started = Date.now();
+  assert.match(text(await t.execute('c2', { source: 'HANG' }, AbortSignal.abort())), /cancelled/);
+  assert.ok(Date.now() - started < 1000, 'an already-cancelled call does not start a render');
 });
 
 test('output that is not a PNG, or over the media limit, is refused', async () => {

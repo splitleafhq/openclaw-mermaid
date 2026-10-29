@@ -24,13 +24,17 @@ export function parseError(stderr) {
 }
 /**
  * Renders Mermaid source to PNG with mermaid-cli, reading the source on stdin and the PNG on stdout. mermaid-cli runs
- * headless Chrome, which fetches image URLs in a diagram even at `securityLevel: strict`; `assets/puppeteer.json`
- * makes every host name fail to resolve, so a diagram can't reach the network. The process runs in its own group so a
- * timeout also stops Chrome.
+ * headless Chrome from a `file:` page, which at `securityLevel: strict` still loads image URLs and local paths a label
+ * names. `assets/puppeteer.json` makes every host name fail to resolve, and the DOMPurify config in
+ * `assets/mermaid.json` drops the tags and attributes that load files. The process runs in its own group so a timeout
+ * also stops Chrome.
  */
 export function renderPng(source, options) {
     const args = ['-q', '-i', '-', '-o', '-', '-e', 'png', '-b', 'white', '-s', '2'];
     args.push('-c', asset('mermaid.json'), '-p', asset('puppeteer.json'));
+    if (options.signal?.aborted) {
+        return Promise.resolve({ ok: false, message: 'the call was cancelled' });
+    }
     return new Promise((resolve) => {
         const child = spawn(options.command ?? 'mmdc', args, { detached: true, stdio: ['pipe', 'pipe', 'pipe'] });
         const out = [];
