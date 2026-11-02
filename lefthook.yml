@@ -5,4 +5,5 @@ pre-push:
       run: |
         # git sets repo-local variables for a hook; run from a linked worktree they point npm's children at the wrong repository.
         unset $(git rev-parse --local-env-vars)
-        npm run lint && npm run typecheck && npm test && npm run build && git diff --exit-code -- dist && test -z "$(git ls-files --others --exclude-standard -- dist)"
+        command -v mmdc >/dev/null || { echo 'pre-push: mmdc is not on PATH. CI runs test/mmdc.test.ts against the real renderer, which is skipped without it. Install it: npm install -g @mermaid-js/mermaid-cli@12.0.0' >&2; exit 1; }
+        npm run lint && npm run typecheck && npm test && npm run build && git diff --exit-code HEAD -- dist && test -z "$(git ls-files --others --exclude-standard -- dist)"
