@@ -1,6 +1,6 @@
 {
   "name": "@splitleafhq/openclaw-mermaid",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "description": "OpenClaw plugin that renders Mermaid diagrams to PNG and sends them to the conversation.",
   "keywords": [
