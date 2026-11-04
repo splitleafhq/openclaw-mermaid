@@ -1,0 +1,31 @@
+#!/bin/sh
+# Runs what CI runs; prints one line per step and exits nonzero if any step failed.
+status=0
+# CI installs mermaid-cli 12.0.0 and test/mmdc.test.ts renders with it; without it those tests skip.
+if ! command -v mmdc >/dev/null; then
+  echo "FAIL mmdc: not on PATH; install it: npm install -g @mermaid-js/mermaid-cli@12.0.0"
+  status=1
+elif [ "$(mmdc --version)" != "12.0.0" ]; then
+  echo "FAIL mmdc: version $(mmdc --version), CI installs 12.0.0; npm install -g @mermaid-js/mermaid-cli@12.0.0"
+  status=1
+else
+  echo "ok   mmdc 12.0.0"
+fi
+for step in lint typecheck test build; do
+  if out=$(npm run --silent "$step" 2>&1); then
+    echo "ok   $step"
+  else
+    echo "FAIL $step"
+    echo "$out"
+    status=1
+  fi
+done
+# OpenClaw installs run npm with --ignore-scripts, so the committed dist/ is what runs.
+if git diff --exit-code --quiet -- dist && test -z "$(git ls-files --others --exclude-standard -- dist)"; then
+  echo "ok   dist"
+else
+  echo "FAIL dist: commit the rebuilt dist/"
+  git status --short -- dist
+  status=1
+fi
+exit $status

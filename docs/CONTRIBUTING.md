@@ -10,10 +10,10 @@ npm test
 npm run build
 ```
 
-A pre-push gate runs these checks before each push: `lefthook install` turns it on (`lefthook.yml`).
+`scripts/check` runs these checks, as CI does. Run `git config core.hooksPath .githooks` once per clone and the pre-push hook runs it before each push.
 
 Commit `dist/` with any change to `src/`; CI fails when it doesn't match a fresh build.
 
 `npm test` fails below 90% line or function, or 85% branch, coverage of `src/`. Run the checks in a separate clone, or delete `node_modules/` from a checkout used as a linked install: OpenClaw's loader maps `openclaw/plugin-sdk/*` to the gateway's own install.
 
-`test/mmdc.test.ts` runs the real mermaid-cli when `mmdc` is on PATH and is skipped where it isn't. CI installs it, and the pre-push hook fails when `mmdc` is missing, so a push never skips those tests. Run it locally before changing `src/render.ts` or `assets/`.
+`test/mmdc.test.ts` runs the real mermaid-cli when `mmdc` is on PATH and is skipped where it isn't. CI installs it, and `scripts/check` fails when `mmdc` is missing or isn't 12.0.0, so a push never skips those tests. Run it locally before changing `src/render.ts` or `assets/`.
