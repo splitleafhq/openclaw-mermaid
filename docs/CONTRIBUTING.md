@@ -16,4 +16,4 @@ Commit `dist/` with any change to `src/`; CI fails when it doesn't match a fresh
 
 `npm test` fails below 90% line or function, or 85% branch, coverage of `src/`. Run the checks in a separate clone, or delete `node_modules/` from a checkout used as a linked install: OpenClaw's loader maps `openclaw/plugin-sdk/*` to the gateway's own install.
 
-`test/mmdc.test.ts` runs the real mermaid-cli when `mmdc` is on PATH and is skipped where it isn't. CI installs it, and `scripts/check` fails when `mmdc` is missing or isn't 12.0.0, so a push never skips those tests. Run it locally before changing `src/render.ts` or `assets/`.
+`test/mmdc.test.ts` runs the real mermaid-cli and fails when `mmdc` isn't on PATH. CI installs it, and `scripts/check` fails when `mmdc` is missing or isn't 12.0.0, so a push never skips those tests. Run it locally before changing `src/render.ts` or `assets/`.

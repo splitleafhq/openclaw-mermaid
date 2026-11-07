@@ -1,7 +1,7 @@
 #!/bin/sh
 # Runs what CI runs; prints one line per step and exits nonzero if any step failed.
 status=0
-# CI installs mermaid-cli 12.0.0 and test/mmdc.test.ts renders with it; without it those tests skip.
+# CI installs mermaid-cli 12.0.0 and test/mmdc.test.ts renders with it; without it those tests fail.
 if ! command -v mmdc >/dev/null; then
   echo "FAIL mmdc: not on PATH; install it: npm install -g @mermaid-js/mermaid-cli@12.0.0"
   status=1
