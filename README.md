@@ -2,7 +2,7 @@
 
 An [OpenClaw](https://docs.openclaw.ai) plugin (id `mermaid`) that lets an agent draw diagrams. The agent writes Mermaid; **`render_mermaid`** renders it to a PNG with [mermaid-cli](https://github.com/mermaid-js/mermaid-cli) on the gateway host and sends the image to the conversation. A bundled `mermaid` skill tells the agent when and how to use it.
 
-**Status:** built and unit-tested against OpenClaw 2026.10.8 and mermaid-cli 12.0.0. Not published. What a live gateway still has to confirm is in [docs/verification.md](docs/verification.md).
+**Status:** built and unit-tested against OpenClaw 2026.10.8 and mermaid-cli 12.2.0. Not published. What a live gateway still has to confirm is in [docs/verification.md](docs/verification.md).
 
 ## What it does
 

@@ -1,15 +1,15 @@
 #!/bin/sh
 # Runs what CI runs; prints one line per step and exits nonzero if any step failed.
 status=0
-# CI installs mermaid-cli 12.0.0 and test/mmdc.test.ts renders with it; without it those tests fail.
+# CI installs mermaid-cli 12.2.0 and test/mmdc.test.ts renders with it; without it those tests fail.
 if ! command -v mmdc >/dev/null; then
-  echo "FAIL mmdc: not on PATH; install it: npm install -g @mermaid-js/mermaid-cli@12.0.0"
+  echo "FAIL mmdc: not on PATH; install it: npm install -g @mermaid-js/mermaid-cli@12.2.0"
   status=1
-elif [ "$(mmdc --version)" != "12.0.0" ]; then
-  echo "FAIL mmdc: version $(mmdc --version), CI installs 12.0.0; npm install -g @mermaid-js/mermaid-cli@12.0.0"
+elif [ "$(mmdc --version)" != "12.2.0" ]; then
+  echo "FAIL mmdc: version $(mmdc --version), CI installs 12.2.0; npm install -g @mermaid-js/mermaid-cli@12.2.0"
   status=1
 else
-  echo "ok   mmdc 12.0.0"
+  echo "ok   mmdc 12.2.0"
 fi
 for step in lint typecheck test build; do
   if out=$(npm run --silent "$step" 2>&1); then
