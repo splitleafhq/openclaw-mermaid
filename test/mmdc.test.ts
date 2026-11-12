@@ -9,7 +9,7 @@ import { renderPng } from '../src/render.ts';
 import { temp } from './fixtures.ts';
 
 test('mmdc is on PATH', () => {
-  assert.doesNotThrow(() => execFileSync('mmdc', ['--version'], { stdio: 'ignore' }), 'mmdc is not on PATH: npm install -g @mermaid-js/mermaid-cli@12.0.0');
+  assert.doesNotThrow(() => execFileSync('mmdc', ['--version'], { stdio: 'ignore' }), 'mmdc is not on PATH: npm install -g @mermaid-js/mermaid-cli@12.2.0');
 });
 
 test('real mmdc renders a flowchart to PNG', async () => {
