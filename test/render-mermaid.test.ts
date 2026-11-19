@@ -4,7 +4,8 @@ import { join } from 'node:path';
 import { before, test } from 'node:test';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { unfence } from '../src/index.ts';
-import { type Delivery, defined, fakeEnvironment, install, recordingDelivery, sourceReply, temp, text } from './fixtures.ts';
+import { renderPng } from '../src/render.ts';
+import { type Delivery, defined, fakeEnvironment, install, recordingDelivery, sourceReply, status, temp, text } from './fixtures.ts';
 
 const FLOW = 'flowchart LR\n  drizzt["Drizzt"] --> guenhwyvar["Guenhwyvar"]';
 
@@ -35,10 +36,15 @@ test('the PNG is sent on its own first, then the caption as the reply, so the im
   assert.deepEqual(sourceReply(r), { text: 'Here is the party.' });
   const names = (await readdir(join(ws, 'out', 'diagrams'))).toSorted();
   assert.equal(names.length, 2);
-  assert.match(defined(names[0]), /^\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{6}-icewind-dale\.mmd$/);
-  assert.equal(await readFile(join(ws, 'out', 'diagrams', defined(names[0])), 'utf8'), FLOW);
-  assert.ok((await readFile(join(ws, 'out', 'diagrams', defined(names[1])))).equals(sent));
-  assert.match(text(r), new RegExp(`out/diagrams/${defined(names[0]).replace('.', '\\.')}`));
+  const [mmd, png] = [defined(names[0]), defined(names[1])];
+  // README: `<stamp>-<hex>-<name>.mmd` and `.png` under out/diagrams.
+  assert.match(mmd, /^\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{6}-icewind-dale\.mmd$/);
+  assert.equal(png, `${mmd.slice(0, -4)}.png`, 'the source and the image share one name');
+  assert.equal(await readFile(join(ws, 'out', 'diagrams', mmd), 'utf8'), FLOW);
+  assert.ok((await readFile(join(ws, 'out', 'diagrams', png))).equals(sent));
+  assert.deepEqual(await readdir(ws), ['out'], 'nothing is written in the workspace outside out/diagrams');
+  assert.deepEqual(await readdir(join(ws, 'out')), ['diagrams']);
+  assert.match(text(r), new RegExp(`Saved out/diagrams/${mmd.replace('.', '\\.')} and out/diagrams/${png.replace('.', '\\.')}\\.`));
   assert.doesNotMatch(text(r), new RegExp(ws), 'paths in the workspace are shown relative to it');
 });
 
@@ -82,6 +88,8 @@ test('with no caption the image is still sent and no empty reply is handed back'
   const r = await (await tool(undefined, {}, delivery)).execute('c1', { source: FLOW });
   assert.equal(delivery.sent.length, 1);
   assert.equal(sourceReply(r), undefined);
+  assert.equal(status(r), 'sent');
+  // The model reads the text, not the status field.
   assert.match(text(r), /^Sent the diagram/);
 });
 
@@ -100,7 +108,8 @@ test('a send that fails returns an error result, not a throw', async () => {
     },
   };
   const r = await (await tool(undefined, {}, delivery)).execute('c1', { source: FLOW, caption: 'x' });
-  assert.match(text(r), /^render_mermaid failed: the image could not be sent/);
+  assert.equal(status(r), 'failed');
+  assert.match(text(r), /could not be sent/);
   assert.equal(sourceReply(r), undefined);
 });
 
@@ -133,6 +142,7 @@ test('a render past timeoutMs is stopped, child processes included, and reported
   const started = Date.now();
   const r = await t.execute('c1', { source: 'HANG' });
   assert.ok(Date.now() - started < 5000);
+  assert.equal(status(r), 'failed');
   assert.match(text(r), /longer than 1000 ms/);
   const pid = Number(await readFile(pidFile, 'utf8'));
   await sleep(200);
@@ -153,8 +163,12 @@ test('a cancelled call stops the render', async () => {
 
 test('output that is not a PNG, or over the media limit, is refused', async () => {
   const t = await tool();
-  assert.match(text(await t.execute('c1', { source: 'NOTPNG' })), /did not return a PNG/);
-  assert.match(text(await t.execute('c2', { source: 'HUGE' })), /over 5242880 bytes/);
+  const notPng = await t.execute('c1', { source: 'NOTPNG' });
+  assert.equal(status(notPng), 'failed');
+  assert.match(text(notPng), /did not return a PNG/);
+  const huge = await t.execute('c2', { source: 'HUGE' });
+  assert.equal(status(huge), 'failed');
+  assert.match(text(huge), /over 5242880 bytes/);
 });
 
 test('a missing mmdc says how to install it', async () => {
@@ -162,6 +176,8 @@ test('a missing mmdc says how to install it', async () => {
   process.env.PATH = await temp();
   try {
     const r = await (await tool()).execute('c1', { source: FLOW });
+    assert.equal(status(r), 'failed');
+    // README documents the install hint; the model relays it.
     assert.match(text(r), /mmdc\) is not on the gateway PATH.*brew install mermaid-cli/);
   } finally {
     process.env.PATH = saved;
@@ -170,8 +186,12 @@ test('a missing mmdc says how to install it', async () => {
 
 test('empty source, and source over maxSourceChars, are refused before rendering', async () => {
   const t = await tool(undefined, { maxSourceChars: 50 });
-  assert.match(text(await t.execute('c1', { source: '  \n' })), /source is empty/);
-  assert.match(text(await t.execute('c2', { source: `graph TD\n${'a'.repeat(60)}` })), /limit is 50/);
+  const empty = await t.execute('c1', { source: '  \n' });
+  assert.equal(status(empty), 'failed');
+  assert.match(text(empty), /empty/);
+  const long = await t.execute('c2', { source: `graph TD\n${'a'.repeat(60)}` });
+  assert.equal(status(long), 'failed');
+  assert.match(text(long), /limit is 50/);
 });
 
 test('saveDir: absolute is used as given and shown in full; relative is under the workspace', async () => {
@@ -191,13 +211,41 @@ test('a saveDir that cannot be written returns an error result and sends nothing
   const ws = await temp();
   await writeFile(join(ws, 'blocked'), 'a file, not a folder');
   const r = await (await tool(ws, { saveDir: 'blocked' })).execute('c1', { source: FLOW });
-  assert.match(text(r), /^render_mermaid failed: saving failed/);
+  assert.equal(status(r), 'failed');
+  assert.match(text(r), /saving failed/);
   assert.equal(sourceReply(r), undefined);
 });
 
 test('without a workspace or an absolute saveDir the tool is not offered', () => {
   const host = install();
   assert.equal(host.toolFor(undefined), undefined);
-  assert.match(host.warnings.join('\n'), /not offered/);
+  assert.equal(host.warnings.length, 1, 'the operator is warned once');
   assert.ok(install({ pluginConfig: { saveDir: '/srv/diagrams' } }).toolFor(undefined));
+});
+
+async function standIn(body: string, mode = 0o755): Promise<string> {
+  const file = join(await temp(), 'mmdc');
+  await writeFile(file, `#!/usr/bin/env node\n${body}\n`, { mode });
+  return file;
+}
+
+test('a long error from mermaid-cli reaches the model capped at 1000 characters', async () => {
+  const command = await standIn("process.stderr.write('Error: ' + 'x'.repeat(30000) + '\\n'); process.exit(1);");
+  const r = await renderPng('flowchart LR\n  a --> b', { timeoutMs: 10000, command });
+  assert.equal(r.ok, false);
+  assert.equal(r.ok === false && r.message.length, 1000);
+});
+
+test('mermaid-cli failing with no message still gives the model a reason', async () => {
+  const command = await standIn('process.exit(1);');
+  const r = await renderPng('flowchart LR\n  a --> b', { timeoutMs: 10000, command });
+  assert.deepEqual(r, { ok: false, message: 'mermaid-cli failed without an error message' });
+});
+
+test('an mmdc that exists but cannot be started is reported as that, not as missing', async () => {
+  const command = await standIn('process.exit(0);', 0o644);
+  const r = await renderPng('flowchart LR\n  a --> b', { timeoutMs: 10000, command });
+  assert.equal(r.ok, false);
+  assert.match(r.ok === false ? r.message : '', /could not start/);
+  assert.doesNotMatch(r.ok === false ? r.message : '', /not on the gateway PATH/);
 });

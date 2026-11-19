@@ -1,4 +1,4 @@
-/** Runs the real mermaid-cli, which CI and scripts/check install; without mmdc on PATH these tests fail. */
+/** Runs the real mermaid-cli. CI installs it (the `test` job) and scripts/check requires it; where mmdc is missing these tests fail, they are not skipped. */
 import { strict as assert } from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import { writeFile } from 'node:fs/promises';

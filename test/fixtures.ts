@@ -120,6 +120,12 @@ export function install({ pluginConfig = {} }: Options = {}) {
 
 export const text = (r: ToolResult) => r.content.map((c) => c.text ?? '').join('');
 
+/** The `status` field of a tool result's details: 'sent' or 'failed'. */
+export function status(r: ToolResult): unknown {
+  const d = r.details;
+  return typeof d === 'object' && d !== null && 'status' in d ? d.status : undefined;
+}
+
 export interface SourceReply {
   text?: string;
   mediaUrls?: string[];
