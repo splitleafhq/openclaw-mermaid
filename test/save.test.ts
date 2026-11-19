@@ -44,6 +44,8 @@ test('a path-like name stays inside the folder', async () => {
   assert.equal(dirname(r.pngPath), join(dir, 'd'));
   assert.equal((await readdir(join(dir, 'd'))).length, 2, 'one diagram: its source and its image');
   assert.doesNotMatch(r.base, /[/\\]/);
+  // The name still ends the file name, as the README documents, with its separators and dots gone.
+  assert.match(r.base, /-etc-x$/);
 });
 
 test('a folder that cannot be created returns an error result with the system code', async () => {

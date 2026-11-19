@@ -89,6 +89,8 @@ test('with no caption the image is still sent and no empty reply is handed back'
   assert.equal(delivery.sent.length, 1);
   assert.equal(sourceReply(r), undefined);
   assert.equal(status(r), 'sent');
+  // The model reads the text, not the status field.
+  assert.match(text(r), /^Sent the diagram/);
 });
 
 test('without a delivery helper the image and caption go together in the reply', async () => {
