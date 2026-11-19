@@ -1,8 +1,8 @@
 import { strict as assert } from 'node:assert';
-import { readFile, readdir, symlink, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { mkdir, readFile, readdir, symlink, writeFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 import { test } from 'node:test';
-import { saveDiagram, slugify, stamp } from '../src/save.ts';
+import { readSavedSource, saveDiagram, slugify, stamp } from '../src/save.ts';
 import { temp } from './fixtures.ts';
 
 const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
@@ -40,7 +40,28 @@ test('a path-like name stays inside the folder', async () => {
   const r = await saveDiagram(join(dir, 'd'), '../../etc/x', 'graph TD', PNG);
   assert.ok(r.ok);
   assert.deepEqual(await readdir(dir), ['d']);
-  assert.match(r.base, /-etc-x$/);
+  assert.equal(dirname(r.mmdPath), join(dir, 'd'));
+  assert.equal(dirname(r.pngPath), join(dir, 'd'));
+  assert.equal((await readdir(join(dir, 'd'))).length, 2, 'one diagram: its source and its image');
+  assert.doesNotMatch(r.base, /[/\\]/);
+});
+
+test('a folder that cannot be created returns an error result with the system code', async () => {
+  const dir = await temp();
+  await writeFile(join(dir, 'blocked'), 'a file, not a folder');
+  const r = await saveDiagram(join(dir, 'blocked'), 'x', 'graph TD', PNG);
+  assert.equal(r.ok, false);
+  assert.match(r.ok ? '' : r.message, /^saving failed \(\w+\)$/);
+});
+
+test('a saved name that cannot be read is reported as a failure, not as a missing file', async () => {
+  const dir = await temp();
+  const name = '2026-10-24-080503-aaaaaa-x.mmd';
+  await mkdir(join(dir, name));
+  const r = await readSavedSource(dir, name);
+  assert.equal(r.ok, false);
+  assert.match(r.ok ? '' : r.message, /^saving failed/);
+  assert.doesNotMatch(r.ok ? '' : r.message, /not in the diagrams folder/);
 });
 
 test('slugify keeps [a-z0-9-], caps at 40 characters and falls back to "diagram"', () => {

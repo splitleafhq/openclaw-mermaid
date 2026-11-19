@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { before, test } from 'node:test';
-import { type Delivery, defined, fakeEnvironment, install, recordingDelivery, sourceReply, temp, text } from './fixtures.ts';
+import { type Delivery, defined, fakeEnvironment, install, recordingDelivery, sourceReply, status, temp, text } from './fixtures.ts';
 
 const FLOW = 'flowchart LR\n  regis["Regis"] --> bruenor["Bruenor"]';
 
@@ -48,10 +48,12 @@ test('a file render_mermaid did not create is refused, and nothing is sent', asy
   await writeFile(join(ws, 'notes.mmd'), 'private');
   for (const file of ['../../etc/passwd', 'notes.mmd', '../notes.mmd', 'out/diagrams/x.txt']) {
     const r = await sendSource.execute('c1', { file });
-    assert.match(text(r), /^send_mermaid_source failed: file must be the \.mmd path/, file);
+    assert.equal(status(r), 'failed', file);
+    assert.match(text(r), /file must be the \.mmd path/, file);
   }
   const missing = await sendSource.execute('c2', { file: '2026-10-24-080503-aaaaaa-drizzt.mmd' });
-  assert.match(text(missing), /^send_mermaid_source failed: 2026-10-24-080503-aaaaaa-drizzt\.mmd is not in the diagrams folder/);
+  assert.equal(status(missing), 'failed');
+  assert.match(text(missing), /not in the diagrams folder/);
   assert.equal(delivery.sent.length, 0);
 });
 
@@ -74,5 +76,6 @@ test('a send that fails returns an error result, not a throw', async () => {
     },
   };
   const r = await tools(ws, broken).sendSource.execute('c2', { file: path });
-  assert.match(text(r), /^send_mermaid_source failed: the source could not be sent/);
+  assert.equal(status(r), 'failed');
+  assert.match(text(r), /could not be sent/);
 });
