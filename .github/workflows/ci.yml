@@ -62,7 +62,8 @@ jobs:
       # test/mmdc.test.ts renders with the real mermaid-cli and fails where mmdc is missing.
       - run: npm install -g @mermaid-js/mermaid-cli@12.2.0 --no-audit --no-fund
       # Ubuntu 24.04 blocks the unprivileged user namespaces Chrome's sandbox needs (Puppeteer troubleshooting guide).
-      - run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      # Kernels without Ubuntu's AppArmor patch, like Podman's Fedora VM under act, lack the setting and the block.
+      - run: if [ -e /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0; fi
       - run: npm test
 
   build:
