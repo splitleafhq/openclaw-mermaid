@@ -19,7 +19,7 @@ Without the delivery helper (a channel whose delivery a Gateway transport owns),
 
 On Matrix with `streaming.mode` `progress`, OpenClaw 2026.10.8 edits the progress draft into the reply text and sends any media in the reply as a separate event without a caption (`extensions/matrix/src/matrix/monitor/handler-reply-dispatcher.ts`, `buildSupplementalPayload`). Sending the image first through the helper keeps it above the text. One message holding the image, the `.txt` and the caption needs an outbound gallery, which the Matrix plugin doesn't send yet.
 
-A parse error comes back as an error result with mermaid-cli's message and line, so the agent can fix the source and call again. Nothing is sent or saved.
+A parse error comes back as an error result with mermaid-cli's message and line, so the agent can fix the source and call again. Nothing is sent or saved. A failure the source can't fix (`mmdc` missing or not executable, or its browser missing) comes back containing `host error, not the source:` with the fix, and is logged as a warning, so the agent tells the user instead of retrying.
 
 ### Network
 
@@ -27,7 +27,7 @@ mermaid-cli renders in headless Chrome from a `file:` page. Even with Mermaid's 
 
 ## Install
 
-Needs `mmdc` on the gateway's PATH (`brew install mermaid-cli`, or `npm install -g @mermaid-js/mermaid-cli`). The skill is hidden while it's missing (`requires.bins`).
+Needs `mmdc` on the gateway's PATH (`brew install mermaid-cli`, or `npm install -g @mermaid-js/mermaid-cli`). The skill is hidden while it's missing (`requires.bins`). mermaid-cli's puppeteer needs its own browser version; after a mermaid-cli upgrade, install the browser and version the error names from mermaid-cli's install folder, so its own puppeteer and cache are used (`npx puppeteer browsers install chrome-headless-shell@<version>`).
 
 Pinned to a tag or commit of a clone, with the gateway owner's approval:
 

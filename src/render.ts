@@ -1,7 +1,8 @@
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-export type RenderResult = { ok: true; png: Buffer } | { ok: false; message: string };
+/** `host` marks a failure the source can't fix: the gateway host needs a change. */
+export type RenderResult = { ok: true; png: Buffer } | { ok: false; message: string; host?: true };
 
 export interface RenderOptions {
   timeoutMs: number;
@@ -43,6 +44,19 @@ export function parseError(stderr: string): string {
  * `assets/mermaid.json` drops the tags and attributes that load files. The process runs in its own group so a timeout
  * also stops Chrome.
  */
+/** Puppeteer's text when the browser version it was built for is not installed (puppeteer-core 25.16.0 `BrowserLauncher.js`). */
+const MISSING_BROWSER = /Could not find (\S+) \(ver\. ([^)\s]+)\)/;
+
+/** Names the failures that come from the gateway host, so the agent stops retrying a source that is fine. */
+function hostFailure(stderr: string): string | undefined {
+  const missing = MISSING_BROWSER.exec(stderr);
+  if (missing === null) {
+    return undefined;
+  }
+  const [, browser = '', version = ''] = missing;
+  return `mermaid-cli's browser, ${browser} ${version}, is not installed on the gateway host. From mermaid-cli's install folder, so its own puppeteer and cache are used, run \`npx puppeteer browsers install ${browser.toLowerCase()}@${version}\``;
+}
+
 export function renderPng(source: string, options: RenderOptions): Promise<RenderResult> {
   const args = ['-q', '-i', '-', '-o', '-', '-e', 'png', '-b', 'white', '-s', '2'];
   args.push('-c', asset('mermaid.json'), '-p', asset('puppeteer.json'));
@@ -82,19 +96,24 @@ export function renderPng(source: string, options: RenderOptions): Promise<Rende
     child.stdin.on('error', () => {
       // An early exit closes stdin; the exit code reports it.
     });
+    let host = false;
     child.on('error', (error) => {
       const code = 'code' in error ? error.code : undefined;
+      host = failure === undefined;
       failure ??=
         code === 'ENOENT'
           ? 'mermaid-cli (mmdc) is not on the gateway PATH. Install it on the gateway host, for example `brew install mermaid-cli`'
-          : `mermaid-cli could not start (${String(code ?? error.message)})`;
+          : `mermaid-cli could not start (${String(code ?? error.message)}). Check that the mmdc on the gateway PATH is an executable install of mermaid-cli`;
     });
     child.on('close', (code) => {
       clearTimeout(timer);
       options.signal?.removeEventListener('abort', onAbort);
       const png = Buffer.concat(out);
+      const hostMessage = code !== 0 && failure === undefined ? hostFailure(stderr) : undefined;
       if (failure !== undefined) {
-        resolve({ ok: false, message: failure });
+        resolve(host ? { ok: false, message: failure, host: true } : { ok: false, message: failure });
+      } else if (hostMessage !== undefined) {
+        resolve({ ok: false, message: hostMessage, host: true });
       } else if (code !== 0) {
         resolve({ ok: false, message: parseError(stderr) });
       } else if (!png.subarray(0, 8).equals(PNG_SIGNATURE)) {

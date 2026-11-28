@@ -81,7 +81,7 @@ export function registerMermaid(api) {
         return {
             name: RENDER,
             label: 'Render Mermaid',
-            description: 'Draw a diagram or chart: renders Mermaid source to a PNG, sends it to this conversation, then sends your caption as your reply. Saves the .mmd and .png and returns their paths. On a syntax error, fix the source and call again.',
+            description: 'Draw a diagram or chart: renders Mermaid source to a PNG, sends it to this conversation, then sends your caption as your reply. Saves the .mmd and .png and returns their paths. On a syntax error, fix the source and call again. On a host error, do not call again: tell the user the gateway host needs the fix it names.',
             parameters: RENDER_PARAMETERS,
             canDeliverSourceReply: true,
             catalogMode: 'direct-only',
@@ -95,6 +95,10 @@ export function registerMermaid(api) {
                 }
                 const rendered = await renderPng(source, { timeoutMs: config.timeoutMs, signal });
                 if (!rendered.ok) {
+                    if (rendered.host === true) {
+                        warn(`render failed on the host: ${rendered.message}`);
+                        return fail(RENDER, `host error, not the source: ${rendered.message}`);
+                    }
                     return fail(RENDER, rendered.message);
                 }
                 const saved = await saveDiagram(dir, params.name ?? '', source, rendered.png);

@@ -135,6 +135,17 @@ test('a syntax error returns the parser message without the stack, and nothing i
   await assert.rejects(readdir(join(ws, 'out', 'diagrams')));
 });
 
+test('a missing browser is a logged host error with the install command, not a syntax error to retry', async () => {
+  const host = install();
+  const t = defined(host.toolFor(await temp()));
+  const r = await t.execute('c1', { source: 'flowchart LR\n  NOBROWSER' });
+  assert.equal(status(r), 'failed');
+  // The tool description and the skill tell the model not to retry on this prefix.
+  assert.match(text(r), /^render_mermaid failed: host error, not the source: /);
+  assert.match(text(r), /browsers install chrome-headless-shell@156\.0\.8078\.47/);
+  assert.equal(host.warnings.length, 1, 'the operator sees it in the gateway log');
+});
+
 test('a render past timeoutMs is stopped, child processes included, and reported', async () => {
   const pidFile = join(await temp(), 'pid');
   process.env.FAKE_MMDC_PIDFILE = pidFile;
@@ -175,10 +186,12 @@ test('a missing mmdc says how to install it', async () => {
   const saved = process.env.PATH;
   process.env.PATH = await temp();
   try {
-    const r = await (await tool()).execute('c1', { source: FLOW });
+    const host = install();
+    const r = await defined(host.toolFor(await temp())).execute('c1', { source: FLOW });
     assert.equal(status(r), 'failed');
-    // README documents the install hint; the model relays it.
-    assert.match(text(r), /mmdc\) is not on the gateway PATH.*brew install mermaid-cli/);
+    // README documents the install hint and the host-error prefix; the model relays one and stops on the other.
+    assert.match(text(r), /^render_mermaid failed: host error, not the source: mermaid-cli \(mmdc\) is not on the gateway PATH.*brew install mermaid-cli/);
+    assert.equal(host.warnings.length, 1);
   } finally {
     process.env.PATH = saved;
   }
@@ -247,5 +260,6 @@ test('an mmdc that exists but cannot be started is reported as that, not as miss
   const r = await renderPng('flowchart LR\n  a --> b', { timeoutMs: 10000, command });
   assert.equal(r.ok, false);
   assert.match(r.ok === false ? r.message : '', /could not start/);
+  assert.equal(r.ok === false && r.host, true, 'a host error, so the model does not retry the source');
   assert.doesNotMatch(r.ok === false ? r.message : '', /not on the gateway PATH/);
 });
