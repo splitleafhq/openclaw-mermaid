@@ -135,6 +135,17 @@ test('a syntax error returns the parser message without the stack, and nothing i
   await assert.rejects(readdir(join(ws, 'out', 'diagrams')));
 });
 
+test('a missing browser is a logged host error with the install command, not a syntax error to retry', async () => {
+  const host = install();
+  const t = defined(host.toolFor(await temp()));
+  const r = await t.execute('c1', { source: 'flowchart LR\n  NOBROWSER' });
+  assert.equal(status(r), 'failed');
+  // The tool description and the skill tell the model not to retry on this prefix.
+  assert.match(text(r), /^render_mermaid failed: host error, not the source: /);
+  assert.match(text(r), /browsers install chrome-headless-shell@156\.0\.8078\.47/);
+  assert.equal(host.warnings.length, 1, 'the operator sees it in the gateway log');
+});
+
 test('a render past timeoutMs is stopped, child processes included, and reported', async () => {
   const pidFile = join(await temp(), 'pid');
   process.env.FAKE_MMDC_PIDFILE = pidFile;

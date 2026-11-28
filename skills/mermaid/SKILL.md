@@ -47,4 +47,4 @@ Every render keeps the `.mmd` and `.png`; the result gives their paths, so you c
 - Subgraphs: `subgraph billing["Billing"]` ... `end`.
 - No links, images, HTML styles or `click` lines: the renderer has no network and strips them.
 
-On a syntax error, `render_mermaid` returns the parser's message with the line. Fix that line and call again.
+On a syntax error, `render_mermaid` returns the parser's message with the line. Fix that line and call again. A message that starts `host error` is not about the source: don't call again, tell the user what the gateway host needs.

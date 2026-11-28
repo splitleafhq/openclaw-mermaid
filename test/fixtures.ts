@@ -36,7 +36,8 @@ export async function temp(): Promise<string> {
 }
 
 /**
- * A fake `mmdc` that answers by keyword in the source: SYNTAX fails like a parse error, HANG never exits (and starts
+ * A fake `mmdc` that answers by keyword in the source: SYNTAX fails like a parse error, NOBROWSER fails like puppeteer
+ * with its browser missing, HANG never exits (and starts
  * a child that would outlive it), NOTPNG prints text, HUGE prints more than the media limit. Anything else is a PNG.
  */
 const FAKE_MMDC = `#!/usr/bin/env node
@@ -46,6 +47,10 @@ process.stdin.on('data', (c) => (src += c));
 process.stdin.on('end', () => {
   if (src.includes('SYNTAX')) {
     process.stderr.write("Error: Parse error on line 2:\\n...A --> B[[[\\n---^\\nExpecting 'TAGEND', got 'SQS'\\nParser.parseError (https://mermaid-cli-intercept.invalid/x.mjs:1:1)\\n    at async renderMermaid (file:///x/index.js:1:1)\\n");
+    process.exit(1);
+  }
+  if (src.includes('NOBROWSER')) {
+    process.stderr.write("Error: Could not find chrome-headless-shell (ver. 156.0.8078.47). This can occur if either\\n 1. you did not perform an installation before running the script (e.g. npx puppeteer browsers install chrome-headless-shell) or\\n 2. your cache path is incorrectly configured (which is: /x/.cache/puppeteer).\\n    at ChromeLauncher.resolveExecutablePath (file:///x/BrowserLauncher.js:1:1)\\n");
     process.exit(1);
   }
   if (src.includes('HANG')) {
