@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.0
+
+- **One captioned image:** with `textPosition: "after"` (the default) the PNG, any `.txt`, and the caption go back together as the reply, so the channel sends the image with the caption on it, then the `.txt`. On Matrix in progress mode this needs OpenClaw with openclaw#188018 (in 2026.11.10); before it, the caption arrived above the image as the edited progress draft. `send_mermaid_source` returns its `.txt` the same way. `textPosition: "before"` is unchanged.
+- A missing browser is reported as a host error and logged, not as a syntax error (#33).
+
 ## 0.3.0
 
 - **`send_mermaid_source`:** sends the source of a diagram already sent, as a `.txt` alone. The image isn't sent again. It takes the `.mmd` path `render_mermaid` returned and accepts only a name the plugin created in `saveDir`.

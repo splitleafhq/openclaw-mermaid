@@ -68,7 +68,7 @@ Both tools are optional, so allow them per agent. A sandboxed agent also needs i
 | `timeoutMs` | `20000` | Longest a render may run |
 | `maxSourceChars` | `20000` | Longest source accepted |
 | `source` | `onRequest` | `onRequest`: the source goes as a `.txt` only when the agent is asked. `always`: a `.txt` with every diagram |
-| `textPosition` | `after` | `after`: the image (and `.txt`), then the agent's text. `before`: the text, then the image (and `.txt`) as the reply |
+| `textPosition` | `after` | `after`: one reply, the image with the agent's text as its caption (then the `.txt`). `before`: the text first, then the image (and `.txt`) as the reply |
 
 The attached copy is staged in OpenClaw's media store (`<state dir>/media/outbound`, pruned after a day), which every channel may send from; `saveDir` can be anywhere.
 
