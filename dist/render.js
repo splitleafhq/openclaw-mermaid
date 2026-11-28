@@ -37,8 +37,8 @@ function hostFailure(stderr) {
     if (missing === null) {
         return undefined;
     }
-    const [, browser, version] = missing;
-    return `mermaid-cli's browser, ${browser} ${version}, is not installed on the gateway host. Install that version with the puppeteer inside mermaid-cli's own install folder: \`npx puppeteer browsers install chrome-headless-shell@${version}\``;
+    const [, browser = '', version = ''] = missing;
+    return `mermaid-cli's browser, ${browser} ${version}, is not installed on the gateway host. From mermaid-cli's install folder, so its own puppeteer and cache are used, run \`npx puppeteer browsers install ${browser.toLowerCase()}@${version}\``;
 }
 export function renderPng(source, options) {
     const args = ['-q', '-i', '-', '-o', '-', '-e', 'png', '-b', 'white', '-s', '2'];
@@ -88,7 +88,7 @@ export function renderPng(source, options) {
             failure ??=
                 code === 'ENOENT'
                     ? 'mermaid-cli (mmdc) is not on the gateway PATH. Install it on the gateway host, for example `brew install mermaid-cli`'
-                    : `mermaid-cli could not start (${String(code ?? error.message)})`;
+                    : `mermaid-cli could not start (${String(code ?? error.message)}). Check that the mmdc on the gateway PATH is an executable install of mermaid-cli`;
         });
         child.on('close', (code) => {
             clearTimeout(timer);
