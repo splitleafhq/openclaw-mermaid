@@ -74,25 +74,19 @@ function resolveSaveDir(config: MermaidConfig, workspaceDir: string | undefined)
 const stageText = async (text: string, name: string) => (await saveMediaBuffer(Buffer.from(text), 'text/plain', 'outbound', MAX_PNG_BYTES, name)).path;
 
 /**
- * Sends the files and the caption in the order `textPosition` sets. The caption is the reply, which ends the turn;
- * with the text first, the files are the reply. Without a delivery helper everything goes in the reply, in whatever
- * order the channel sends it.
+ * Hands back the files and the caption in the order `textPosition` sets. `after` (the default) puts them in one reply:
+ * the channel sends the first file with the caption on it, then the rest (Matrix in progress mode too, since
+ * openclaw#188018, in OpenClaw 2026.11.10). `before` sends the caption first through the delivery helper, and the files are the
+ * reply. Without a delivery helper everything goes in the reply.
  */
 async function deliver(delivery: Delivery, media: string[], caption: string, config: MermaidConfig, done: string, details: Record<string, unknown>) {
-  if (delivery === undefined) {
-    return textResult(done, { ...details, sourceReply: { text: caption, mediaUrls: media } });
-  }
-  if (config.textPosition === 'before') {
+  if (delivery !== undefined && config.textPosition === 'before') {
     if (caption !== '') {
       await delivery.send({ text: caption });
     }
     return textResult(done, { ...details, sourceReply: { mediaUrls: media } });
   }
-  for (const mediaUrl of media) {
-    // oxlint-disable-next-line no-await-in-loop -- sends must land in order: the image, then the .txt
-    await delivery.send({ mediaUrl });
-  }
-  return textResult(done, caption === '' ? details : { ...details, sourceReply: { text: caption } });
+  return textResult(done, { ...details, sourceReply: caption === '' ? { mediaUrls: media } : { text: caption, mediaUrls: media } });
 }
 
 export function registerMermaid(api: PluginHost): void {
@@ -111,7 +105,7 @@ export function registerMermaid(api: PluginHost): void {
         name: RENDER,
         label: 'Render Mermaid',
         description:
-          'Draw a diagram or chart: renders Mermaid source to a PNG, sends it to this conversation, then sends your caption as your reply. Saves the .mmd and .png and returns their paths. On a syntax error, fix the source and call again. On a host error, do not call again: tell the user the gateway host needs the fix it names.',
+          'Draw a diagram or chart: renders Mermaid source to a PNG and sends it to this conversation with your caption on it, as your reply. Saves the .mmd and .png and returns their paths. On a syntax error, fix the source and call again. On a host error, do not call again: tell the user the gateway host needs the fix it names.',
         parameters: RENDER_PARAMETERS,
         canDeliverSourceReply: true,
         catalogMode: 'direct-only',

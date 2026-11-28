@@ -22,13 +22,14 @@ test('asking for the source later sends only its .txt, never the image again', a
   const delivery = recordingDelivery();
   const { render, sendSource } = tools(ws, delivery);
   const drawn = await render.execute('c1', { source: FLOW, caption: 'The companions' });
-  assert.equal(delivery.sent.length, 1);
   const r = await sendSource.execute('c2', { file: mmdPath(drawn), caption: 'Here it is.' });
-  assert.equal(delivery.sent.length, 2, 'one more send: the .txt alone');
-  const txt = defined(delivery.sent[1]?.mediaUrl);
+  const reply = defined(sourceReply(r));
+  assert.equal(reply.text, 'Here it is.');
+  assert.equal(defined(reply.mediaUrls).length, 1, 'the .txt alone');
+  const txt = defined(reply.mediaUrls?.[0]);
   assert.match(txt, /\.txt$/);
   assert.equal(await readFile(txt, 'utf8'), FLOW);
-  assert.deepEqual(sourceReply(r), { text: 'Here it is.' });
+  assert.deepEqual(delivery.sent, []);
 });
 
 test('the source can be named by the full path or the bare file name', async () => {
@@ -37,8 +38,8 @@ test('the source can be named by the full path or the bare file name', async () 
   const { render, sendSource } = tools(ws, delivery);
   const path = mmdPath(await render.execute('c1', { source: FLOW, caption: 'x' }));
   const bare = path.split('/').at(-1);
-  await sendSource.execute('c2', { file: defined(bare) });
-  assert.equal(await readFile(defined(delivery.sent[1]?.mediaUrl), 'utf8'), FLOW);
+  const reply = defined(sourceReply(await sendSource.execute('c2', { file: defined(bare) })));
+  assert.equal(await readFile(defined(reply.mediaUrls?.[0]), 'utf8'), FLOW);
 });
 
 test('a file render_mermaid did not create is refused, and nothing is sent', async () => {
@@ -66,7 +67,7 @@ test('without a delivery helper the .txt goes in the reply', async () => {
   assert.equal(await readFile(defined(reply.mediaUrls?.[0]), 'utf8'), FLOW);
 });
 
-test('a send that fails returns an error result, not a throw', async () => {
+test('a text-first send that fails returns an error result, not a throw', async () => {
   const ws = await temp();
   const { render } = tools(ws);
   const path = mmdPath(await render.execute('c1', { source: FLOW, caption: 'x' }));
@@ -75,7 +76,7 @@ test('a send that fails returns an error result, not a throw', async () => {
       throw new Error('room gone');
     },
   };
-  const r = await tools(ws, broken).sendSource.execute('c2', { file: path });
+  const r = await tools(ws, broken, { textPosition: 'before' }).sendSource.execute('c2', { file: path, caption: 'x' });
   assert.equal(status(r), 'failed');
   assert.match(text(r), /could not be sent/);
 });

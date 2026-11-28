@@ -20,20 +20,20 @@ async function tool(workspace?: string, pluginConfig: Record<string, unknown> = 
 
 const isPng = (b: Buffer) => b.subarray(0, 4).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47]));
 
-test('the PNG is sent on its own first, then the caption as the reply, so the image never arrives after the text', async () => {
+test('the PNG and the caption go out together as the reply, so the channel sends one captioned image', async () => {
   const ws = await temp();
   const delivery = recordingDelivery();
   const t = await tool(ws, {}, delivery);
   assert.equal(t.canDeliverSourceReply, true);
   const r = await t.execute('c1', { source: FLOW, name: 'Icewind Dale', caption: 'Here is the party.' });
-  assert.equal(delivery.sent.length, 1);
-  const [first] = delivery.sent;
-  assert.equal(defined(first).text, undefined, 'the image carries no text');
-  const mediaUrl = defined(defined(first).mediaUrl);
+  assert.deepEqual(delivery.sent, [], 'nothing goes out ahead of the reply');
+  const reply = defined(sourceReply(r));
+  assert.equal(reply.text, 'Here is the party.');
+  assert.equal(defined(reply.mediaUrls).length, 1);
+  const mediaUrl = defined(reply.mediaUrls?.[0]);
   assert.ok(mediaUrl.startsWith(join(env.state, 'media', 'outbound')), 'staged in the media store');
   const sent = await readFile(mediaUrl);
   assert.ok(isPng(sent));
-  assert.deepEqual(sourceReply(r), { text: 'Here is the party.' });
   const names = (await readdir(join(ws, 'out', 'diagrams'))).toSorted();
   assert.equal(names.length, 2);
   const [mmd, png] = [defined(names[0]), defined(names[1])];
@@ -51,25 +51,27 @@ test('the PNG is sent on its own first, then the caption as the reply, so the im
 test('the source goes only as a .txt file, after the image, and only when asked; never inline', async () => {
   const delivery = recordingDelivery();
   const t = await tool(undefined, {}, delivery);
-  const plain = await t.execute('c1', { source: FLOW, caption: 'Regis' });
-  assert.equal(delivery.sent.length, 1);
-  assert.doesNotMatch(defined(defined(sourceReply(plain)).text), /```|flowchart/);
+  const plain = defined(sourceReply(await t.execute('c1', { source: FLOW, caption: 'Regis' })));
+  assert.equal(defined(plain.mediaUrls).length, 1);
+  assert.doesNotMatch(defined(plain.text), /```|flowchart/);
 
-  const asked = await t.execute('c2', { source: FLOW, caption: 'Regis', attachSource: true });
-  assert.equal(delivery.sent.length, 3);
-  assert.ok(isPng(await readFile(defined(delivery.sent[1]?.mediaUrl))));
-  const txt = defined(delivery.sent[2]?.mediaUrl);
+  const asked = defined(sourceReply(await t.execute('c2', { source: FLOW, caption: 'Regis', attachSource: true })));
+  assert.equal(asked.text, 'Regis');
+  assert.equal(defined(asked.mediaUrls).length, 2);
+  assert.ok(isPng(await readFile(defined(asked.mediaUrls?.[0]))));
+  const txt = defined(asked.mediaUrls?.[1]);
   assert.match(txt, /\.txt$/);
   assert.equal(await readFile(txt, 'utf8'), FLOW);
-  assert.deepEqual(sourceReply(asked), { text: 'Regis' });
+  assert.deepEqual(delivery.sent, []);
 });
 
 test('source "always" sends the .txt after the image without being asked', async () => {
   const delivery = recordingDelivery();
-  await (await tool(undefined, { source: 'always' }, delivery)).execute('c1', { source: FLOW, caption: 'Cattie-brie' });
-  assert.equal(delivery.sent.length, 2);
-  assert.ok(isPng(await readFile(defined(delivery.sent[0]?.mediaUrl))));
-  assert.equal(await readFile(defined(delivery.sent[1]?.mediaUrl), 'utf8'), FLOW);
+  const r = await (await tool(undefined, { source: 'always' }, delivery)).execute('c1', { source: FLOW, caption: 'Cattie-brie' });
+  const media = defined(defined(sourceReply(r)).mediaUrls);
+  assert.equal(media.length, 2);
+  assert.ok(isPng(await readFile(defined(media[0]))));
+  assert.equal(await readFile(defined(media[1]), 'utf8'), FLOW);
 });
 
 test('textPosition "before" sends the text first, then the image and .txt as the reply', async () => {
@@ -83,11 +85,12 @@ test('textPosition "before" sends the text first, then the image and .txt as the
   assert.match(defined(reply.mediaUrls?.[1]), /\.txt$/);
 });
 
-test('with no caption the image is still sent and no empty reply is handed back', async () => {
+test('with no caption the image is still the reply, with no empty text', async () => {
   const delivery = recordingDelivery();
   const r = await (await tool(undefined, {}, delivery)).execute('c1', { source: FLOW });
-  assert.equal(delivery.sent.length, 1);
-  assert.equal(sourceReply(r), undefined);
+  const reply = defined(sourceReply(r));
+  assert.equal(reply.text, undefined);
+  assert.equal(defined(reply.mediaUrls).length, 1);
   assert.equal(status(r), 'sent');
   // The model reads the text, not the status field.
   assert.match(text(r), /^Sent the diagram/);
@@ -101,13 +104,13 @@ test('without a delivery helper the image and caption go together in the reply',
   assert.ok(isPng(await readFile(defined(reply.mediaUrls?.[0]))));
 });
 
-test('a send that fails returns an error result, not a throw', async () => {
+test('a text-first send that fails returns an error result, not a throw', async () => {
   const delivery: Delivery = {
     send: async () => {
       throw new Error('room gone');
     },
   };
-  const r = await (await tool(undefined, {}, delivery)).execute('c1', { source: FLOW, caption: 'x' });
+  const r = await (await tool(undefined, { textPosition: 'before' }, delivery)).execute('c1', { source: FLOW, caption: 'x' });
   assert.equal(status(r), 'failed');
   assert.match(text(r), /could not be sent/);
   assert.equal(sourceReply(r), undefined);
